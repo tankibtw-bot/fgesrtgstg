@@ -1,12 +1,14 @@
 ; ABYSS — retro sci-fi FPS campaign
-; Built for Godot 4.x with procedural low-poly environments.
 config_version=5
 
 [application]
 config/name="ABYSS"
-run/main_scene="res://scenes/Main.tscn"
+run/main_scene="res://scenes/Menu.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/description="A story-driven retro FPS campaign beneath the NOVA facility."
+
+[autoload]
+PauseMenu="*res://scripts/PauseMenu.gd"
 
 [display]
 window/size/viewport_width=960
@@ -20,4 +22,3 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
 environment/defaults/default_clear_color=Color(0.025, 0.035, 0.05, 1)
-
