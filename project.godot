@@ -8,6 +8,7 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 config/description="A story-driven retro FPS campaign beneath the NOVA facility."
 
 [autoload]
+CampaignState="*res://scripts/CampaignState.gd"
 PauseMenu="*res://scripts/PauseMenu.gd"
 
 [display]

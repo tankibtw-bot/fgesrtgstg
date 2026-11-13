@@ -2,24 +2,32 @@ extends Node3D
 
 const PLAYER_SCRIPT = preload("res://scripts/Player.gd")
 const ENEMY_SCRIPT = preload("res://scripts/Enemy.gd")
-const CHAPTERS := [
-    {"title":"01 — СМЕНА", "place":"Жилой уровень NOVA", "radio":"РЕЙН: Алекс, добро пожаловать на объект. Проверьте питание лаборатории и поднимитесь на балкон наблюдения.", "objective":"Осмотрите жилой уровень. Найдите выход к лаборатории.", "kind":"дрон"},
-    {"title":"02 — ТЕСТ", "place":"Лаборатория 09", "radio":"СИСТЕМА: Критическая ошибка. РЕЙН: Алекс, если слышите меня — выберитесь из лаборатории!", "objective":"Пройдите через разрушенную лабораторию.", "kind":"дрон"},
-    {"title":"03 — ЭВАКУАЦИЯ", "place":"Зона эвакуации", "radio":"РЕЙН: Не идите к лифту. Там Цербер. Спускайтесь к реактору. Только вы знаете схему питания.", "objective":"Пробейтесь через отряд Цербера.", "kind":"Цербер"},
-    {"title":"04 — ТЕХНИЧЕСКИЕ ТОННЕЛИ", "place":"Сервисные шахты", "radio":"РЕЙН: Показатели Объекта-09 нестабильны. Не приближайтесь к биомассе.", "objective":"Найдите путь через тоннели.", "kind":"изменённый"},
-    {"title":"05 — СВИДЕТЕЛЬ", "place":"Затопленный склад", "radio":"ВОЛКОВ: Они знали, что она живая. Возьмите карту… Уровень минус две тысячи. Не верьте Рейн.", "objective":"Доберитесь до выхода. Волков передал вам ключ-карту.", "kind":"изменённый"},
-    {"title":"06 — ЦЕРБЕР", "place":"Монорельс», сектор безопасности", "radio":"КОВАЧ: Морган, ты не должен был выжить. Уходи. У меня приказ, и я его выполню.", "objective":"Прорваться через зону наёмников.", "kind":"Цербер"},
-    {"title":"07 — АРХИВ", "place":"Архив NOVA", "radio":"АРХИВ 1987: Объект не проявлял агрессии. Первый контакт — повторяющийся сигнал бедствия.", "objective":"Найдите правду в архиве и продвигайтесь дальше.", "kind":"Цербер"},
-    {"title":"08 — КОНТАКТ", "place":"Камера содержания", "radio":"ОБЪЕКТ-09: …БОЛЬ… ТЬМА… ОТПУСТИ…", "objective":"Доберитесь до камеры содержания.", "kind":"изменённый"},
-    {"title":"09 — ПРОТОКОЛ", "place":"Коридоры охраны", "radio":"РЕЙН: Протокол уничтожит всё. КОВАЧ: Приказ изменён. Устранить всех, включая руководство NOVA.", "objective":"Переживите последнюю зачистку Цербера.", "kind":"Цербер"},
-    {"title":"10 — ЦЕНТР", "place":"Центр управления", "radio":"РЕЙН: Я не прошу прощения. Только закончи это. Аварийный тоннель выведет тебя наверх.", "objective":"Подойдите к панели выбора. Решение за вами.", "kind":"элитный"},
-    {"title":"11 — ВЫБОР", "place":"Камера Объекта-09", "radio":"ОБЪЕКТ-09: Я не прошу ничего. Я покажу тебе выход.", "objective":"Сделайте выбор действием: активируйте одну из трёх панелей.", "kind":"элитный"},
-    {"title":"12 — ТИШИНА", "place":"Поверхность", "radio":"", "objective":"Кампания завершена. Нажмите E, чтобы начать заново.", "kind":""}
+const CHAPTER_TITLES := ["СМЕНА", "ТЕСТ", "ЭВАКУАЦИЯ", "ТЕХНИЧЕСКИЕ ТОННЕЛИ", "СВИДЕТЕЛЬ", "ЦЕРБЕР", "АРХИВ", "КОНТАКТ", "ПРОТОКОЛ", "ЦЕНТР", "ВЫБОР", "ТИШИНА"]
+const CHAPTER_PLACES := ["Жилой уровень NOVA", "Лаборатория 09", "Зона эвакуации", "Сервисные шахты", "Затопленный склад", "Сектор безопасности", "Архив NOVA", "Камера содержания", "Коридоры охраны", "Центр управления", "Камера Объекта-09", "Поверхность"]
+const CHAPTER_RADIO := [
+    "РЕЙН: Алекс, добро пожаловать на объект. Проверьте питание лаборатории и поднимитесь на балкон наблюдения.",
+    "СИСТЕМА: Критическая ошибка. РЕЙН: Алекс, если слышите меня — выберитесь из лаборатории!",
+    "РЕЙН: Не идите к лифту. Там Цербер. Спускайтесь к реактору. Только вы знаете схему питания.",
+    "РЕЙН: Показатели Объекта-09 нестабильны. Не приближайтесь к биомассе.",
+    "ВОЛКОВ: Они знали, что она живая. Возьмите карту… Уровень минус две тысячи. Не верьте Рейн.",
+    "КОВАЧ: Морган, ты не должен был выжить. Уходи. У меня приказ, и я его выполню.",
+    "АРХИВ 1987: Объект не проявлял агрессии. Первый контакт — повторяющийся сигнал бедствия.",
+    "ОБЪЕКТ-09: …БОЛЬ… ТЬМА… ОТПУСТИ…",
+    "РЕЙН: Протокол уничтожит всё. КОВАЧ: Приказ изменён. Устранить всех, включая руководство NOVA.",
+    "РЕЙН: Я не прошу прощения. Только закончи это. Аварийный тоннель выведет тебя наверх.",
+    "ОБЪЕКТ-09: Я не прошу ничего. Я покажу тебе выход.",
+    ""
 ]
+const CHAPTER_OBJECTIVES := [
+    "Осмотрите жилой уровень и найдите путь к лаборатории.", "Пройдите через разрушенную лабораторию.", "Пробейтесь через отряд Цербера.", "Найдите путь через технические тоннели.", "Доберитесь до выхода. Волков передал вам ключ-карту.", "Прорвитесь через зону наёмников.", "Найдите правду в архиве и продвигайтесь дальше.", "Доберитесь до камеры содержания.", "Переживите последнюю зачистку Цербера.", "Доберитесь до панели управления.", "Решите судьбу Объекта-09.", "Кампания завершена. Нажмите E, чтобы вернуться в меню."
+]
+const FLOOR_COLORS := ["41464a", "3b4248", "353c44", "263c43", "354347", "393d45", "353a46", "263842", "3c3b42", "33444a", "273946", "49525b"]
+const WALL_COLORS := ["62676b", "4d555b", "4b515d", "28505a", "475a58", "4a4b55", "535269", "315060", "49434b", "345366", "314b58", "66737a"]
 
 var player: CharacterBody3D
 var level_root: Node3D
 var hud: CanvasLayer
+var chapter_label: Label
 var health_label: Label
 var weapon_label: Label
 var ammo_label: Label
@@ -30,41 +38,27 @@ var chapter_index := 0
 var ending := ""
 var chapter_complete := false
 var player_lost := false
-var interaction_text := ""
-var trigger_used := false
-var message_timer := 0.0
+var last_radio := ""
+var damage_flash: ColorRect
 
 func _ready() -> void:
     add_to_group("game")
-    _setup_inputs()
     _setup_world()
     _create_player()
     _build_hud()
-    _start_chapter(0)
+    chapter_index = clampi(CampaignState.current_chapter, 0, CHAPTER_TITLES.size() - 1)
+    ending = CampaignState.last_ending
+    _start_chapter(chapter_index)
 
-func _process(delta: float) -> void:
-    message_timer = maxf(0.0, message_timer - delta)
+func _process(_delta: float) -> void:
     if player_lost:
-        center_label.text = "СИГНАЛ ПОТЕРЯН\nНажмите E, чтобы начать заново"
-        if Input.is_action_just_pressed("interact"):
-            get_tree().reload_current_scene()
+        center_label.text = "СИГНАЛ ПОТЕРЯН\nНажмите E, чтобы начать главу заново"
+        if Input.is_key_pressed(KEY_E) and Input.is_action_just_pressed("ui_accept"):
+            restart_current_chapter()
         return
     _update_objective()
-    if Input.is_action_just_pressed("interact"):
+    if Input.is_key_pressed(KEY_E) and Input.is_action_just_pressed("ui_accept"):
         _interact()
-    if chapter_index == 11 and chapter_complete and Input.is_action_just_pressed("interact"):
-        get_tree().reload_current_scene()
-
-func _setup_inputs() -> void:
-    _bind_key("interact", KEY_E)
-    _bind_key("jump", KEY_SPACE)
-    _bind_key("reload", KEY_R)
-
-func _bind_key(action: String, key: Key) -> void:
-    if not InputMap.has_action(action): InputMap.add_action(action)
-    var event := InputEventKey.new()
-    event.keycode = key
-    InputMap.action_add_event(action, event)
 
 func _setup_world() -> void:
     var env_node := WorldEnvironment.new()
@@ -77,7 +71,7 @@ func _setup_world() -> void:
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.fog_enabled = true
     env.fog_light_color = Color(0.09, 0.12, 0.16)
-    env.fog_density = 0.012
+    env.fog_density = 0.009
     env_node.environment = env
     add_child(env_node)
     var sun := DirectionalLight3D.new()
@@ -92,10 +86,10 @@ func _create_player() -> void:
     player = CharacterBody3D.new()
     player.name = "Player"
     player.set_script(PLAYER_SCRIPT)
+    var collision := CollisionShape3D.new()
     var capsule := CapsuleShape3D.new()
     capsule.radius = 0.36
     capsule.height = 1.8
-    var collision := CollisionShape3D.new()
     collision.shape = capsule
     player.add_child(collision)
     var head := Node3D.new()
@@ -123,87 +117,117 @@ func _create_player() -> void:
     player.player_died.connect(_on_player_died)
 
 func _start_chapter(index: int) -> void:
-    chapter_index = clampi(index, 0, CHAPTERS.size() - 1)
+    chapter_index = clampi(index, 0, CHAPTER_TITLES.size() - 1)
+    CampaignState.current_chapter = chapter_index
+    CampaignState.selected_chapter = chapter_index
+    CampaignState.campaign_started = true
+    CampaignState.call("_write_save")
     chapter_complete = false
-    trigger_used = false
-    interaction_text = ""
-    for child in level_root.get_children(): child.queue_free()
+    player_lost = false
+    for child in level_root.get_children():
+        child.free()
     player.global_position = Vector3(0, 1.0, 13)
     player.velocity = Vector3.ZERO
+    player.dead = false
+    player.health = 100
+    player._publish_stats()
     _generate_level(chapter_index)
-    if chapter_index == 11:
-        _finish_ending_scene()
     _update_objective()
+    _show_radio(CHAPTER_RADIO[chapter_index])
+
+func restart_current_chapter() -> void:
+    _start_chapter(chapter_index)
 
 func _generate_level(index: int) -> void:
-    var chapter: Dictionary = CHAPTERS[index]
-    var palette := _chapter_palette(index)
-    _box(Vector3(0, -0.5, 0), Vector3(42, 1, 42), palette.floor, true)
-    _box(Vector3(0, 2.2, -21), Vector3(42, 5, 1), palette.wall, true)
-    _box(Vector3(0, 2.2, 21), Vector3(42, 5, 1), palette.wall, true)
-    _box(Vector3(-21, 2.2, 0), Vector3(1, 5, 42), palette.wall, true)
-    _box(Vector3(21, 2.2, 0), Vector3(1, 5, 42), palette.wall, true)
+    var floor_color := Color(FLOOR_COLORS[index])
+    var wall_color := Color(WALL_COLORS[index])
+    var accent := Color("e0a34d") if index < 3 else Color("42bdd0")
+    _box(Vector3(0, -0.5, 0), Vector3(42, 1, 42), floor_color, true)
+    _box(Vector3(0, 2.2, -21), Vector3(42, 5, 1), wall_color, true)
+    _box(Vector3(0, 2.2, 21), Vector3(42, 5, 1), wall_color, true)
+    _box(Vector3(-21, 2.2, 0), Vector3(1, 5, 42), wall_color, true)
+    _box(Vector3(21, 2.2, 0), Vector3(1, 5, 42), wall_color, true)
     for i in range(7):
         var z := -14.0 + float(i) * 4.5
-        _box(Vector3(-7.5 if i % 2 == 0 else 7.5, 1.1, z), Vector3(4.0, 2.2, 2.0), palette.cover, true)
+        var side := -7.5 if i % 2 == 0 else 7.5
+        _box(Vector3(side, 1.1, z), Vector3(4.0, 2.2, 2.0), wall_color.darkened(0.18), true)
     for i in range(3):
-        _box(Vector3(-14 + i * 14, 3.8, -8), Vector3(0.22, 0.18, 4), palette.light, false, true)
-    _box(Vector3(0, 0.1, -18.2), Vector3(2.4, 2.2, 0.4), Color(0.15, 0.55, 0.62), true, true)
-    _spawn_chapter_props(index, palette)
+        _box(Vector3(-14 + i * 14, 3.8, -8), Vector3(0.22, 0.18, 4), accent, false, true)
+    _make_chapter_set_dressing(index, accent)
     if index == 10:
         _make_ending_panels()
     elif index < 11:
         _make_exit()
-    var count := 0 if index == 0 or index == 11 else mini(2 + index / 2, 7)
-    for i in range(count):
-        var spawn := Vector3(-14 + float((i * 11) % 28), 1.0, -8 - float((i * 7) % 8))
-        _spawn_enemy(spawn, str(chapter.kind), index)
-    if index == 0:
-        _spawn_enemy(Vector3(10, 1, -8), "дрон", index)
-    if index in [2, 5, 8]:
-        player.grant_weapon(1 if index == 2 else 3)
-    if index == 6: player.grant_weapon(2)
-    if index == 7: player.grant_weapon(5)
-    _show_radio(str(chapter.radio))
+    var enemy_count := 0
+    if index in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+        enemy_count = mini(1 + index / 3, 4)
+    if index == 10:
+        enemy_count = 1
+    for i in range(enemy_count):
+        var spawn := Vector3(-13.0 + float((i * 13) % 26), 1.0, -7.0 - float((i * 9) % 9))
+        var kind := _enemy_kind_for_chapter(index, i)
+        _spawn_enemy(spawn, kind, index)
+    if index == 2: player.grant_weapon(1)
+    elif index == 5: player.grant_weapon(3)
+    elif index == 6: player.grant_weapon(2)
+    elif index == 7: player.grant_weapon(5)
+    if index == 11: _build_epilogue()
 
-func _chapter_palette(index: int) -> Dictionary:
-    var floors := [Color("41464a"), Color("3b4248"), Color("353c44"), Color("263c43"), Color("354347"), Color("393d45"), Color("353a46"), Color("263842"), Color("3c3b42"), Color("33444a"), Color("273946"), Color("49525b")]
-    var walls := [Color("62676b"), Color("4d555b"), Color("4b515d"), Color("28505a"), Color("475a58"), Color("4a4b55"), Color("535269"), Color("315060"), Color("49434b"), Color("345366"), Color("314b58"), Color("66737a")]
-    return {"floor": floors[index], "wall": walls[index], "cover": walls[index].darkened(0.18), "light": Color(0.92, 0.64, 0.28) if index < 4 else Color(0.22, 0.78, 0.92)}
+func _enemy_kind_for_chapter(index: int, enemy_number: int) -> String:
+    if index == 1: return "дрон"
+    if index in [2, 5, 8, 9]: return "Цербер"
+    if index == 10: return "элитный"
+    if enemy_number == 0 and index in [3, 4, 7]: return "изменённый"
+    return "Цербер" if enemy_number % 2 == 0 else "изменённый"
 
-func _spawn_chapter_props(index: int, palette: Dictionary) -> void:
-    var label_text := str(CHAPTERS[index].place)
+func _make_chapter_set_dressing(index: int, accent: Color) -> void:
     var sign := Label3D.new()
-    sign.text = label_text.to_upper()
+    sign.text = CHAPTER_PLACES[index].to_upper()
     sign.font_size = 48
     sign.pixel_size = 0.008
-    sign.position = Vector3(-4.3, 3.0, -19.35)
-    sign.modulate = palette.light
+    sign.position = Vector3(-5.0, 3.0, -19.35)
+    sign.modulate = accent
     level_root.add_child(sign)
-    if index == 4:
+    if index == 0:
+        _box(Vector3(-13, 1.1, 3), Vector3(3.0, 2.2, 2.0), Color("53615e"), true)
+        _box(Vector3(13, 1.1, 3), Vector3(3.0, 2.2, 2.0), Color("53615e"), true)
+        _box(Vector3(0, 2.8, -2), Vector3(12, 0.18, 3), Color("70787b"), false)
+    elif index == 1 or index == 7:
+        _box(Vector3(0, 0.1, -3), Vector3(9, 0.12, 9), Color("123b4b"), false, true)
+        for p in [Vector3(-12, 1.0, 3), Vector3(12, 1.0, -1), Vector3(0, 1.0, -13)]:
+            _box(p, Vector3(1.0, 2.0, 1.0), Color("727b7d"), true)
+    elif index == 3:
+        _box(Vector3(0, 2.4, 0), Vector3(2.2, 4.8, 32), Color("27373c"), true)
+        _box(Vector3(-7, 2.4, -7), Vector3(14, 4.8, 1), Color("27373c"), true)
+        _box(Vector3(7, 2.4, 7), Vector3(14, 4.8, 1), Color("27373c"), true)
+    elif index == 4:
         for p in [Vector3(-3, 0.1, 4), Vector3(4, 0.1, 6), Vector3(8, 0.1, 2)]:
-            _box(p, Vector3(2.5, 0.15, 2), Color(0.12, 0.32, 0.38), false)
-    if index == 6:
-        _box(Vector3(0, 0.05, -5), Vector3(8, 0.12, 8), Color(0.15, 0.29, 0.35), false, true)
-    if index == 9:
-        _box(Vector3(0, 0.1, -15), Vector3(5, 0.2, 2), Color(0.75, 0.19, 0.12), false, true)
+            _box(p, Vector3(3.0, 0.14, 3.0), Color("123e49"), false, true)
+        _box(Vector3(-13, 1.0, -9), Vector3(2, 2, 5), Color("5c615c"), true)
+    elif index == 6:
+        for i in range(5):
+            _box(Vector3(-14 + i * 7, 1.5, -4), Vector3(1.0, 3.0, 7.0), Color("59566b"), true)
+    elif index == 8 or index == 9:
+        _box(Vector3(0, 0.1, -15), Vector3(5, 0.2, 2), Color("9b3023"), false, true)
+        _box(Vector3(-13, 1.1, -8), Vector3(2, 2.2, 4), Color("48535c"), true)
+        _box(Vector3(13, 1.1, -8), Vector3(2, 2.2, 4), Color("48535c"), true)
 
 func _spawn_enemy(pos: Vector3, kind: String, chapter: int) -> void:
     var enemy := CharacterBody3D.new()
     enemy.set_script(ENEMY_SCRIPT)
-    var hp := 50 + chapter * 4
-    var speed := 3.0 + minf(float(chapter) * 0.08, 1.3)
+    var hp := 48 + chapter * 5
+    var speed := 3.0 + minf(float(chapter) * 0.06, 1.0)
     var damage := 9 + chapter
     if kind == "дрон":
         hp = 30
         speed = 3.8
         damage = 7
     elif kind == "Цербер":
-        hp = 75
+        hp = 68
         speed = 2.7
-        damage = 12
+        damage = 11
     elif kind == "элитный":
-        hp = 150
+        hp = 180
         speed = 2.4
         damage = 18
     enemy.configure(kind, hp, speed, damage)
@@ -215,6 +239,7 @@ func _spawn_enemy(pos: Vector3, kind: String, chapter: int) -> void:
     collision.shape = shape
     enemy.add_child(collision)
     var visual := MeshInstance3D.new()
+    visual.name = "MeshInstance3D"
     var mesh := CapsuleMesh.new()
     mesh.radius = shape.radius
     mesh.height = shape.height
@@ -230,35 +255,15 @@ func _spawn_enemy(pos: Vector3, kind: String, chapter: int) -> void:
     level_root.add_child(enemy)
 
 func _make_exit() -> void:
-    var door := Area3D.new()
-    door.name = "ExitDoor"
-    door.position = Vector3(0, 1.1, -18.5)
-    door.set_meta("exit", true)
-    var collision := CollisionShape3D.new()
-    var shape := BoxShape3D.new()
-    shape.size = Vector3(3.0, 2.4, 1.5)
-    collision.shape = shape
-    door.add_child(collision)
-    var marker := MeshInstance3D.new()
-    var mesh := BoxMesh.new()
-    mesh.size = Vector3(2.6, 2.0, 0.18)
-    marker.mesh = mesh
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.08, 0.7, 0.62)
-    mat.emission_enabled = true
-    mat.emission = Color(0.03, 0.38, 0.32)
-    marker.material_override = mat
-    door.add_child(marker)
-    level_root.add_child(door)
+    _box(Vector3(0, 1.1, -18.5), Vector3(2.8, 2.2, 0.22), Color("0c594f"), false, true)
 
 func _make_ending_panels() -> void:
     var labels := ["УНИЧТОЖИТЬ", "ОСВОБОДИТЬ", "УЙТИ"]
-    var colors := [Color(0.85, 0.2, 0.12), Color(0.15, 0.75, 0.85), Color(0.8, 0.72, 0.3)]
+    var colors := [Color("d9442e"), Color("38c4d6"), Color("d3b64c")]
     for i in range(3):
         var x := float(i - 1) * 5.5
-        _box(Vector3(x, 1.3, -13.8), Vector3(2.2, 2.6, 0.6), Color(0.2, 0.23, 0.28), true)
+        _box(Vector3(x, 1.3, -13.8), Vector3(2.2, 2.6, 0.6), Color("202b32"), true)
         var panel := Area3D.new()
-        panel.name = "EndingPanel%d" % i
         panel.position = Vector3(x, 1.3, -12.9)
         panel.set_meta("ending", i)
         var shape := BoxShape3D.new()
@@ -272,23 +277,10 @@ func _make_ending_panels() -> void:
         text.position.y = 1.6
         text.modulate = colors[i]
         panel.add_child(text)
-        var glow := MeshInstance3D.new()
-        var box := BoxMesh.new()
-        box.size = Vector3(1.2, 0.35, 0.08)
-        glow.mesh = box
-        glow.position = Vector3(0, 0.55, -0.15)
-        var material := StandardMaterial3D.new()
-        material.albedo_color = colors[i]
-        material.emission_enabled = true
-        material.emission = colors[i]
-        glow.material_override = material
-        panel.add_child(glow)
         level_root.add_child(panel)
 
 func _box(pos: Vector3, size: Vector3, color: Color, solid: bool, emissive: bool = false) -> void:
-    var body: Node3D
-    if solid: body = StaticBody3D.new()
-    else: body = Node3D.new()
+    var body: Node3D = StaticBody3D.new() if solid else Node3D.new()
     body.position = pos
     var visual := MeshInstance3D.new()
     var mesh := BoxMesh.new()
@@ -312,33 +304,32 @@ func _box(pos: Vector3, size: Vector3, color: Color, solid: bool, emissive: bool
 
 func _build_hud() -> void:
     hud = CanvasLayer.new()
+    hud.name = "HUD"
     add_child(hud)
-    var top := Label.new()
-    top.name = "Chapter"
-    top.position = Vector2(18, 12)
-    top.add_theme_font_size_override("font_size", 18)
-    top.modulate = Color(0.74, 0.88, 0.92)
-    hud.add_child(top)
-    health_label = _label(Vector2(18, 42), 22, Color(0.95, 0.35, 0.3))
-    weapon_label = _label(Vector2(18, 492), 18, Color(0.85, 0.9, 0.92))
-    ammo_label = _label(Vector2(790, 492), 20, Color(0.98, 0.82, 0.38))
-    objective_label = _label(Vector2(250, 12), 17, Color(0.95, 0.88, 0.68))
-    objective_label.size = Vector2(650, 54)
-    radio_label = _label(Vector2(20, 395), 16, Color(0.58, 0.86, 0.91))
-    radio_label.size = Vector2(900, 74)
+    chapter_label = _label(Vector2(18, 12), 17, Color("bcd0d4"))
+    health_label = _label(Vector2(18, 40), 21, Color("f05a4f"))
+    objective_label = _label(Vector2(240, 12), 16, Color("f0d89c"))
+    objective_label.size = Vector2(470, 48)
+    radio_label = _label(Vector2(20, 394), 16, Color("75c9d4"))
+    radio_label.size = Vector2(900, 70)
     radio_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    center_label = _label(Vector2(250, 240), 24, Color(1, 1, 1))
-    center_label.size = Vector2(460, 110)
+    weapon_label = _label(Vector2(18, 492), 17, Color("d9e1e2"))
+    ammo_label = _label(Vector2(800, 492), 20, Color("f5d276"))
+    center_label = _label(Vector2(270, 230), 23, Color.WHITE)
+    center_label.size = Vector2(420, 100)
     center_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     center_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-    var crosshair := _label(Vector2(471, 253), 24, Color(0.9, 0.95, 0.85))
+    var crosshair := _label(Vector2(471, 253), 24, Color("e8f4e3"))
     crosshair.text = "+"
-    var controls := _label(Vector2(655, 12), 14, Color(0.65, 0.7, 0.75))
+    var controls := _label(Vector2(650, 12), 13, Color("81969e"))
     controls.text = "WASD движение • Shift бег • Space прыжок\nЛКМ огонь • R перезарядка • 1–6 оружие • E действие"
-    controls.size = Vector2(290, 42)
+    controls.size = Vector2(300, 44)
     controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    var chapter_label := top
-    chapter_label.text = "ABYSS — NOVA DEEP FACILITY"
+    damage_flash = ColorRect.new()
+    damage_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    damage_flash.color = Color(0.8, 0.05, 0.02, 0.0)
+    damage_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(damage_flash)
 
 func _label(pos: Vector2, font_size: int, color: Color) -> Label:
     var label := Label.new()
@@ -349,64 +340,64 @@ func _label(pos: Vector2, font_size: int, color: Color) -> Label:
     return label
 
 func _show_radio(text: String) -> void:
+    last_radio = text
     radio_label.text = text
-    message_timer = 12.0
 
-func _on_stats_changed(health: int, weapon: String, ammo: String) -> void:
-    health_label.text = "ЗДОРОВЬЕ  %03d" % health
+func _on_stats_changed(value: int, weapon: String, ammo: String) -> void:
+    health_label.text = "ЗДОРОВЬЕ  %03d" % value
     weapon_label.text = "ОРУЖИЕ: " + weapon
     ammo_label.text = ammo
 
 func _on_player_died() -> void:
     player_lost = true
-    center_label.text = "СИГНАЛ ПОТЕРЯН\nНажмите E, чтобы начать заново"
+    center_label.text = "СИГНАЛ ПОТЕРЯН\nНажмите E, чтобы начать главу заново"
 
 func _update_objective() -> void:
-    var chapter: Dictionary = CHAPTERS[chapter_index]
-    var title := str(chapter.title)
-    get_node("CanvasLayer/Chapter").text = title + "  |  " + str(chapter.place)
+    chapter_label.text = "%02d  |  %s — %s" % [chapter_index + 1, CHAPTER_TITLES[chapter_index], CHAPTER_PLACES[chapter_index]]
     var enemies := get_tree().get_nodes_in_group("enemy")
     if chapter_index == 11:
-        objective_label.text = "КОНЕЦ: " + ending.to_upper() + "   •   Нажмите E, чтобы начать заново"
+        objective_label.text = "ФИНАЛ: " + ending.to_upper() + "   •   E — главное меню"
         center_label.text = _ending_text()
         chapter_complete = true
-        return
-    if chapter_index == 10:
-        objective_label.text = "Решение за вами. Подойдите к панели и нажмите E."
+    elif chapter_index == 10:
+        objective_label.text = "Подойдите к одной из трёх панелей и нажмите E."
         center_label.text = "ТРИ ПУТИ.\nОДИН ВЫБОР."
-        return
-    if enemies.is_empty():
+    elif enemies.is_empty():
         chapter_complete = true
-        objective_label.text = "ЦЕЛЬ ВЫПОЛНЕНА  •  Найдите зелёную дверь и нажмите E"
+        objective_label.text = "ЦЕЛЬ ВЫПОЛНЕНА  •  Найдите зелёный выход и нажмите E"
         center_label.text = "ПУТЬ ОТКРЫТ\nИщите зелёный выход"
     else:
         chapter_complete = false
-        objective_label.text = str(chapter.objective) + "   •   ЦЕЛИ: " + str(enemies.size())
+        objective_label.text = CHAPTER_OBJECTIVES[chapter_index] + "   •   ЦЕЛИ: " + str(enemies.size())
         center_label.text = ""
 
 func _interact() -> void:
-    if chapter_index == 11 and chapter_complete:
-        get_tree().reload_current_scene()
+    if chapter_index == 11:
+        get_tree().change_scene_to_file("res://scenes/Menu.tscn")
         return
     if chapter_index == 10:
         for node in level_root.get_children():
             if node is Area3D and node.has_meta("ending") and player.global_position.distance_to(node.global_position) < 3.2:
-                var choice: int = int(node.get_meta("ending"))
-                ending = ["Уничтожить", "Освободить", "Уйти"][choice]
-                chapter_complete = true
+                ending = ["Уничтожить", "Освободить", "Уйти"][int(node.get_meta("ending"))]
+                CampaignState.set_ending(ending)
                 _start_chapter(11)
                 return
     if not chapter_complete:
+        _show_radio("Сначала выполните цель главы.")
         return
-    var door_pos := Vector3(0, 1.1, -18.5)
-    if player.global_position.distance_to(door_pos) < 4.0:
+    var exit_position := Vector3(0, 1.1, -18.5)
+    if player.global_position.distance_to(exit_position) < 4.0:
+        CampaignState.mark_chapter_complete(chapter_index)
+        player.heal(25)
         _start_chapter(chapter_index + 1)
+    else:
+        _show_radio("Выход отмечен зелёным светом — найдите его.")
 
 func create_explosion(point: Vector3, damage: int) -> void:
     for enemy in get_tree().get_nodes_in_group("enemy"):
         var distance := enemy.global_position.distance_to(point)
         if distance < 6.0:
-            enemy.take_damage(int(float(damage) * (1.0 - distance / 8.0)))
+            enemy.take_damage(int(float(damage) * maxf(0.0, 1.0 - distance / 8.0)))
     var flash := OmniLight3D.new()
     flash.position = point
     flash.light_color = Color(1.0, 0.48, 0.12)
@@ -421,17 +412,19 @@ func melee_swing(origin: Vector3, direction: Vector3) -> void:
         if offset.length() < 2.7 and direction.dot(offset.normalized()) > 0.45:
             enemy.take_damage(45)
 
-func _finish_ending_scene() -> void:
-    for child in level_root.get_children():
-        if child is Area3D: child.queue_free()
-    var color := Color(0.7, 0.75, 0.78)
-    _box(Vector3(0, 4, -7), Vector3(42, 0.4, 30), Color(0.34, 0.42, 0.48), false)
-    var sun := OmniLight3D.new()
-    sun.position = Vector3(0, 7, -5)
-    sun.light_color = color
-    sun.light_energy = 3.0
-    sun.omni_range = 24.0
-    level_root.add_child(sun)
+func _build_epilogue() -> void:
+    var ground := StandardMaterial3D.new()
+    ground.albedo_color = Color("344652")
+    _box(Vector3(0, 8, -22), Vector3(80, 0.5, 60), Color("263c49"), false)
+    var sky_light := OmniLight3D.new()
+    sky_light.position = Vector3(0, 8, -10)
+    sky_light.light_color = Color("91cbdc")
+    sky_light.light_energy = 2.5
+    sky_light.omni_range = 35.0
+    level_root.add_child(sky_light)
+    for i in range(9):
+        var ridge := _box(Vector3(-30 + i * 7.5, 2.0 + (i % 3) * 1.2, -26 - (i % 2) * 6), Vector3(8, 5 + (i % 3), 5), Color("40545c"), false)
+        ridge.rotation_degrees.y = float(i * 19)
 
 func _ending_text() -> String:
     match ending:
