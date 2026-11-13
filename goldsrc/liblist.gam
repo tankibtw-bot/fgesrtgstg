@@ -1,0 +1,7 @@
+// ABYSS — map-only GoldSrc mod scaffold
+// Start map is the first custom map to compile: maps/abyss01.bsp
+// This initial slice uses the stock Half-Life game DLL.
+game "ABYSS"
+startmap "abyss01"
+trainmap "abyss01"
+gamedll "hl.dll"
