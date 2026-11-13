@@ -1,156 +1,184 @@
 extends CharacterBody3D
 
-const MOVE_SPEED := 6.5
-const SPRINT_SPEED := 9.5
-const ACCELERATION := 10.0
-const AIR_ACCELERATION := 3.0
-const FRICTION := 12.0
+signal stats_changed(health: int, weapon_name: String, ammo_text: String)
+signal player_died
+
+const WALK_SPEED := 6.2
+const SPRINT_SPEED := 8.8
+const JUMP_SPEED := 6.0
 const GRAVITY := 18.0
-const JUMP_FORCE := 6.2
-const MAX_HEALTH := 100
-const MAX_AMMO := 30
-
-var health := MAX_HEALTH
-var ammo := MAX_AMMO
-var reserve_ammo := 90
-var fire_rate := 0.12
-var fire_timer := 0.0
-var dead := false
-var pitch := 0.0
-var yaw := 0.0
-
-signal health_changed(value)
-signal ammo_changed(current, reserve)
+const WEAPONS := [
+    {"name":"Монтировка", "mag":0, "reserve":0, "damage":45, "rate":0.42, "range":2.7},
+    {"name":"Пистолет", "mag":12, "reserve":72, "damage":28, "rate":0.28, "range":70.0},
+    {"name":"Дробовик", "mag":8, "reserve":32, "damage":13, "rate":0.82, "range":32.0},
+    {"name":"Автомат", "mag":30, "reserve":120, "damage":18, "rate":0.095, "range":85.0},
+    {"name":"Граната", "mag":4, "reserve":8, "damage":100, "rate":0.8, "range":15.0},
+    {"name":"Импульсная", "mag":20, "reserve":80, "damage":42, "rate":0.2, "range":90.0},
+]
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 
+var health := 100
+var pitch := 0.0
+var yaw := 0.0
+var selected_weapon := 0
+var magazines := [0, 12, 8, 30, 4, 20]
+var reserves := [0, 72, 32, 120, 8, 80]
+var fire_cooldown := 0.0
+var dead := false
+var reloading := false
+var reload_left := 0.0
+var recoil := 0.0
+var mouse_sensitivity := 0.0022
+
 func _ready() -> void:
     add_to_group("player")
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-    emit_signal("health_changed", health)
-    emit_signal("ammo_changed", ammo, reserve_ammo)
+    _publish_stats()
 
 func _unhandled_input(event: InputEvent) -> void:
-    if dead:
-        return
-
-    if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-        yaw -= event.relative.x * 0.0025
-        pitch -= event.relative.y * 0.0020
-        pitch = clamp(pitch, -1.35, 1.35)
+    if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not dead:
+        yaw -= event.relative.x * mouse_sensitivity
+        pitch = clampf(pitch - event.relative.y * mouse_sensitivity, -1.42, 1.42)
         rotation.y = yaw
         head.rotation.x = pitch
-
-    if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-        Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-
-    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-        fire()
-
-    if event is InputEventKey and event.pressed and event.keycode == KEY_R:
-        reload()
+    if event is InputEventKey and event.pressed and not event.echo:
+        if event.keycode == KEY_ESCAPE:
+            Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
+        if event.keycode >= KEY_1 and event.keycode <= KEY_6:
+            equip(int(event.keycode) - int(KEY_1))
+        if event.keycode == KEY_R:
+            start_reload()
 
 func _process(delta: float) -> void:
-    if dead:
-        return
-
-    fire_timer = max(0.0, fire_timer - delta)
-
-    if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and fire_timer <= 0.0:
-        fire()
+    if fire_cooldown > 0.0:
+        fire_cooldown -= delta
+    if recoil > 0.0:
+        recoil = move_toward(recoil, 0.0, delta * 2.4)
+    if reloading:
+        reload_left -= delta
+        if reload_left <= 0.0:
+            finish_reload()
+    if not dead and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+        if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and selected_weapon == 3:
+            fire()
+        elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and fire_cooldown <= 0.0:
+            fire()
 
 func _physics_process(delta: float) -> void:
     if dead:
         return
-
-    var input_dir := Vector2.ZERO
-
-    if Input.is_key_pressed(KEY_W):
-        input_dir.y -= 1
-    if Input.is_key_pressed(KEY_S):
-        input_dir.y += 1
-    if Input.is_key_pressed(KEY_A):
-        input_dir.x -= 1
-    if Input.is_key_pressed(KEY_D):
-        input_dir.x += 1
-
-    if input_dir.length() > 0.0:
-        input_dir = input_dir.normalized()
-
+    var move_input := Vector2.ZERO
+    if Input.is_key_pressed(KEY_W): move_input.y -= 1.0
+    if Input.is_key_pressed(KEY_S): move_input.y += 1.0
+    if Input.is_key_pressed(KEY_A): move_input.x -= 1.0
+    if Input.is_key_pressed(KEY_D): move_input.x += 1.0
+    if move_input.length_squared() > 1.0:
+        move_input = move_input.normalized()
     var forward := -global_transform.basis.z
     var right := global_transform.basis.x
-    var wish_dir := (forward * input_dir.y + right * input_dir.x)
-
-    if want_jump() and is_on_floor():
-        velocity.y = JUMP_FORCE
-
-    if not is_on_floor():
+    var wish := (forward * move_input.y + right * move_input.x).normalized()
+    var speed := SPRINT_SPEED if Input.is_key_pressed(KEY_SHIFT) else WALK_SPEED
+    if wish.length_squared() > 0.0:
+        velocity.x = move_toward(velocity.x, wish.x * speed, 28.0 * delta)
+        velocity.z = move_toward(velocity.z, wish.z * speed, 28.0 * delta)
+    else:
+        velocity.x = move_toward(velocity.x, 0.0, 16.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 16.0 * delta)
+    if is_on_floor():
+        if Input.is_key_pressed(KEY_SPACE): velocity.y = JUMP_SPEED
+        else: velocity.y = -0.15
+    else:
         velocity.y -= GRAVITY * delta
-    else:
-        velocity.y = min(velocity.y, 0.0)
-
-    if wish_dir.length() > 0.0:
-        wish_dir = wish_dir.normalized()
-        var target_speed = SPRINT_SPEED if Input.is_key_pressed(KEY_SHIFT) else MOVE_SPEED
-        var target_velocity = wish_dir * target_speed
-        var accel = is_on_floor() ? ACCELERATION : AIR_ACCELERATION
-        velocity.x = move_toward(velocity.x, target_velocity.x, accel * delta)
-        velocity.z = move_toward(velocity.z, target_velocity.z, accel * delta)
-    else:
-        var friction_value = is_on_floor() ? FRICTION : 0.6
-        velocity.x = move_toward(velocity.x, 0.0, friction_value * delta)
-        velocity.z = move_toward(velocity.z, 0.0, friction_value * delta)
-
     move_and_slide()
 
-func want_jump() -> bool:
-    return Input.is_key_pressed(KEY_SPACE)
+func equip(index: int) -> void:
+    if index < 0 or index >= WEAPONS.size() or index == selected_weapon:
+        return
+    selected_weapon = index
+    reloading = false
+    fire_cooldown = 0.0
+    _publish_stats()
 
 func fire() -> void:
-    if dead or fire_timer > 0.0 or ammo <= 0:
+    if dead or reloading or fire_cooldown > 0.0:
         return
-
-    ammo -= 1
-    fire_timer = fire_rate
-    emit_signal("ammo_changed", ammo, reserve_ammo)
-
-    var from: Vector3 = camera.global_position
-    var dir: Vector3 = -camera.global_transform.basis.z.normalized()
-    var to: Vector3 = from + dir * 100.0
-
-    var query = PhysicsRayQueryParameters3D.new()
-    query.from = from
-    query.to = to
-    query.exclude = [self]
-    query.collide_with_areas = false
-    query.collide_with_bodies = true
-
-    var result = get_world_3d().direct_space_state.intersect_ray(query)
-    if result:
-        var actor = result.get("collider")
-        if actor and actor.has_method("take_damage"):
-            actor.take_damage(25)
-
-func reload() -> void:
-    if dead or ammo == MAX_AMMO or reserve_ammo <= 0:
+    var weapon: Dictionary = WEAPONS[selected_weapon]
+    if selected_weapon != 0 and magazines[selected_weapon] <= 0:
+        start_reload()
         return
+    fire_cooldown = float(weapon.rate)
+    recoil = minf(recoil + 0.018, 0.08)
+    if selected_weapon != 0:
+        magazines[selected_weapon] -= 1
+    _publish_stats()
+    if selected_weapon == 4:
+        _explode(camera.global_position + (-camera.global_transform.basis.z * 9.0), int(weapon.damage))
+        return
+    var pellets := 7 if selected_weapon == 2 else 1
+    for i in range(pellets):
+        var direction := -camera.global_transform.basis.z
+        if selected_weapon == 2:
+            direction = (direction + camera.global_transform.basis.x * randf_range(-0.09, 0.09) + camera.global_transform.basis.y * randf_range(-0.09, 0.09)).normalized()
+        elif selected_weapon == 3:
+            direction = (direction + camera.global_transform.basis.x * randf_range(-0.012, 0.012) + camera.global_transform.basis.y * randf_range(-0.012, 0.012)).normalized()
+        var query := PhysicsRayQueryParameters3D.create(camera.global_position, camera.global_position + direction * float(weapon.range))
+        query.exclude = [self]
+        var hit := get_world_3d().direct_space_state.intersect_ray(query)
+        if not hit.is_empty():
+            var target: Object = hit.get("collider")
+            if target != null and target.has_method("take_damage"):
+                target.take_damage(int(weapon.damage))
+    if selected_weapon == 0:
+        _make_melee_spark()
 
-    var needed = MAX_AMMO - ammo
-    var loaded = min(needed, reserve_ammo)
-    ammo += loaded
-    reserve_ammo -= loaded
-    emit_signal("ammo_changed", ammo, reserve_ammo)
+func start_reload() -> void:
+    if selected_weapon == 0 or reloading or magazines[selected_weapon] >= int(WEAPONS[selected_weapon].mag) or reserves[selected_weapon] <= 0:
+        return
+    reloading = true
+    reload_left = 1.25 if selected_weapon != 2 else 1.8
+
+func finish_reload() -> void:
+    var capacity: int = int(WEAPONS[selected_weapon].mag)
+    var amount: int = mini(capacity - magazines[selected_weapon], reserves[selected_weapon])
+    magazines[selected_weapon] += amount
+    reserves[selected_weapon] -= amount
+    reloading = false
+    _publish_stats()
 
 func hurt(amount: int) -> void:
     if dead:
         return
-
-    health -= amount
-    health = max(0, health)
-    emit_signal("health_changed", health)
-
+    health = maxi(health - amount, 0)
+    _publish_stats()
     if health <= 0:
         dead = true
         Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+        player_died.emit()
 
+func heal(amount: int) -> void:
+    health = mini(100, health + amount)
+    _publish_stats()
+
+func grant_weapon(index: int) -> void:
+    if index > 0 and index < WEAPONS.size():
+        equip(index)
+        reserves[index] += int(WEAPONS[index].reserve) / 2
+        _publish_stats()
+
+func _publish_stats() -> void:
+    if selected_weapon >= WEAPONS.size(): return
+    var label := "∞" if selected_weapon == 0 else "%d / %d" % [magazines[selected_weapon], reserves[selected_weapon]]
+    if reloading: label = "ПЕРЕЗАРЯДКА…"
+    stats_changed.emit(health, str(WEAPONS[selected_weapon].name), label)
+
+func _explode(point: Vector3, damage: int) -> void:
+    var game := get_tree().get_first_node_in_group("game")
+    if game != null and game.has_method("create_explosion"):
+        game.create_explosion(point, damage)
+
+func _make_melee_spark() -> void:
+    var game := get_tree().get_first_node_in_group("game")
+    if game != null and game.has_method("melee_swing"):
+        game.melee_swing(camera.global_position, -camera.global_transform.basis.z)
